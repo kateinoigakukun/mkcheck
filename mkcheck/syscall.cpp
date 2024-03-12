@@ -730,10 +730,11 @@ void Handle(Trace *trace, int64_t sno, const Args &args)
   }
 
   if (sno > sizeof(kHandlers) / sizeof(kHandlers[0]) || !kHandlers[sno]) {
-    throw std::runtime_error(
-        "Unknown syscall " + std::to_string(sno) + " in " +
-        trace->GetFileName(trace->GetTrace(args.PID)->GetImage())
-    );
+    return;
+    // throw std::runtime_error(
+    //     "Unknown syscall " + std::to_string(sno) + " in " +
+    //     trace->GetFileName(trace->GetTrace(args.PID)->GetImage())
+    // );
   }
 
   auto *proc = trace->GetTrace(args.PID);

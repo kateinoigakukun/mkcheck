@@ -716,7 +716,7 @@ def main():
     buildDir = os.getcwd()
     project = get_project(buildDir, args)
 
-    build_tool()
+    # build_tool()
 
     if args.cmd == 'build':
         project.clean_build()
