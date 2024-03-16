@@ -192,10 +192,10 @@ int RunTracer(const fs::path &output, pid_t root)
   std::unordered_map<pid_t, std::shared_ptr<ProcessState>> tracked;
   tracked[root] = std::make_shared<ProcessState>(root);
   
-  auto GetState = [&tracked](pid_t pid) {
+  auto GetState = [&tracked](pid_t pid, bool clone = false) {
     auto it = tracked.find(pid);
     if (it == tracked.end()) {
-      throw std::runtime_error("Invalid PID: " + std::to_string(pid));
+      throw std::runtime_error("Invalid PID: " + std::to_string(pid) + " clone=" + std::to_string(clone));
     }
     return it->second;
   };
@@ -267,7 +267,7 @@ int RunTracer(const fs::path &output, pid_t root)
           case PTRACE_EVENT_CLONE: {
             bool shareVM = false;
             if (event == PTRACE_EVENT_CLONE) {
-              shareVM = GetState(pid)->GetArg(2) & CLONE_VM;
+              shareVM = GetState(pid, true)->GetArg(2) & CLONE_VM;
             }
             
             // Get the ID of the child process.
@@ -293,7 +293,11 @@ int RunTracer(const fs::path &output, pid_t root)
             restartSig = 0;
             break;
           }
+          case 0: {
+            break;
+          }
           default: {
+            printf("Unknown event: %d\n", event);
             break;
           }
         }

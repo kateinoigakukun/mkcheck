@@ -208,10 +208,15 @@ static void sys_fcntl(Process *proc, const Args &args)
       case F_OFD_SETLKW: {
         break;
       }
+      case F_SETPIPE_SZ:
+      case F_GETPIPE_SZ: {
+        break;
+      }
       default: {
         throw std::runtime_error(
             "Unknown fnctl (cmd = " + std::to_string(cmd) + ")"
         );
+        break;
       }
     }
   }
@@ -731,10 +736,10 @@ void Handle(Trace *trace, int64_t sno, const Args &args)
 
   if (sno > sizeof(kHandlers) / sizeof(kHandlers[0]) || !kHandlers[sno]) {
     return;
-    // throw std::runtime_error(
-    //     "Unknown syscall " + std::to_string(sno) + " in " +
-    //     trace->GetFileName(trace->GetTrace(args.PID)->GetImage())
-    // );
+    throw std::runtime_error(
+        "Unknown syscall " + std::to_string(sno) + " in " +
+        trace->GetFileName(trace->GetTrace(args.PID)->GetImage())
+    );
   }
 
   auto *proc = trace->GetTrace(args.PID);
