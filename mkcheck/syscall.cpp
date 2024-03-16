@@ -665,6 +665,16 @@ static const HandlerFn kHandlers[] =
   /* 0x070 */ [SYS_setsid            ] = sys_ignore,
   /* 0x071 */ [SYS_setreuid          ] = sys_ignore,
   /* 0x073 */ [SYS_getgroups         ] = sys_ignore,
+  /* 0x075 */ [SYS_setresuid         ] = sys_ignore,
+  /* 0x076 */ [SYS_getresuid         ] = sys_ignore,
+  /* 0x077 */ [SYS_setresgid         ] = sys_ignore,
+  /* 0x078 */ [SYS_getresgid         ] = sys_ignore,
+  /* 0x079 */ [SYS_getpgid           ] = sys_ignore,
+  /* 0x07A */ [SYS_setfsuid          ] = sys_ignore,
+  /* 0x07B */ [SYS_setfsgid          ] = sys_ignore,
+  /* 0x07C */ [SYS_getsid            ] = sys_ignore,
+  /* 0x07D */ [SYS_capget            ] = sys_ignore,
+  /* 0x07E */ [SYS_capset            ] = sys_ignore,
   /* 0x07F */ [SYS_rt_sigpending     ] = sys_ignore,
   /* 0x083 */ [SYS_sigaltstack       ] = sys_ignore,
   /* 0x084 */ [SYS_utime             ] = sys_utime,
@@ -724,7 +734,12 @@ static const HandlerFn kHandlers[] =
   /* 0x125 */ [SYS_pipe2             ] = sys_pipe2,
   /* 0x12E */ [SYS_prlimit64         ] = sys_ignore,
   /* 0x133 */ [SYS_sendmmsg          ] = sys_ignore,
+  /* 0x13C */ [SYS_renameat2         ] = sys_ignore,
   /* 0x13E */ [SYS_getrandom         ] = sys_ignore,
+  /* 0x14C */ [SYS_statx             ] = sys_ignore,
+  /* 0x14E */ [SYS_rseq              ] = sys_ignore,
+  /* 0x1B3 */ [SYS_clone3            ] = sys_ignore,
+  /* 0x1B7 */ [SYS_faccessat2        ] = sys_ignore,
 };
 
 // -----------------------------------------------------------------------------
@@ -735,7 +750,6 @@ void Handle(Trace *trace, int64_t sno, const Args &args)
   }
 
   if (sno > sizeof(kHandlers) / sizeof(kHandlers[0]) || !kHandlers[sno]) {
-    return;
     throw std::runtime_error(
         "Unknown syscall " + std::to_string(sno) + " in " +
         trace->GetFileName(trace->GetTrace(args.PID)->GetImage())
