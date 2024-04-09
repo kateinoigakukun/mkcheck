@@ -481,6 +481,25 @@ static void sys_renameat(Process *proc, const Args &args)
 }
 
 // -----------------------------------------------------------------------------
+static void sys_symlinkat(Process *proc, const Args &args)
+{
+  const int newdirfd = args[1];
+  const fs::path src = ReadString(args.PID, args[0]);
+  const fs::path dst = ReadString(args.PID, args[2]);
+
+  if (args.Return >= 0) {
+    const fs::path parent = proc->Normalise(newdirfd, dst.parent_path());
+    const fs::path srcPath = proc->Normalise(src, parent);
+    const fs::path dstPath = parent / dst.filename();
+
+    // configure seems to create links pointing to themselves, which we ignore.
+    if (srcPath != dstPath) {
+      proc->Link(srcPath, dstPath);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 static void sys_unlinkat(Process *proc, const Args &args)
 {
   const int fd = args[0];
@@ -717,6 +736,7 @@ static const HandlerFn kHandlers[] =
   /* 0x106 */ [SYS_newfstatat        ] = sys_newfstatat,
   /* 0x107 */ [SYS_unlinkat          ] = sys_unlinkat,
   /* 0x108 */ [SYS_renameat          ] = sys_renameat,
+  /* 0x10A */ [SYS_symlinkat         ] = sys_symlinkat,
   /* 0x10B */ [SYS_readlinkat        ] = sys_readlinkat,
   /* 0x10C */ [SYS_fchmodat          ] = sys_ignore,
   /* 0x10D */ [SYS_faccessat         ] = sys_faccessat,
