@@ -94,7 +94,7 @@ class Project(object):
 
         if rule_file:
             with open(rule_file, 'r') as f:
-                data = yaml.load(f.read())
+                data = yaml.load(f.read(), Loader=yaml.FullLoader)
             filter_in = data.get('filter_in', [])
             filter_tmp = data.get('filter_tmp', [])
             filter_out = data.get('filter_out', [])
