@@ -588,6 +588,16 @@ static void sys_pipe2(Process *proc, const Args &args)
 }
 
 // -----------------------------------------------------------------------------
+
+static void sys_copy_file_range(Process *proc, const Args &args)
+{
+  if (args.Return >= 0) {
+    proc->AddInput(args[0]);
+    proc->AddOutput(args[2]);
+  }
+}
+
+// -----------------------------------------------------------------------------
 static void sys_ignore(Process *proc, const Args &args)
 {
 }
@@ -755,6 +765,7 @@ static const HandlerFn kHandlers[] =
   /* 0x133 */ [SYS_sendmmsg          ] = sys_ignore,
   /* 0x13C */ [SYS_renameat2         ] = sys_ignore,
   /* 0x13E */ [SYS_getrandom         ] = sys_ignore,
+  /* 0x146 */ [SYS_copy_file_range   ] = sys_copy_file_range,
   /* 0x14C */ [SYS_statx             ] = sys_ignore,
   /* 0x14E */ [SYS_rseq              ] = sys_ignore,
   /* 0x1B3 */ [SYS_clone3            ] = sys_ignore,
