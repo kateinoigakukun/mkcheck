@@ -181,7 +181,9 @@ uint64_t Trace::Find(const fs::path &path)
   if (it == fileIDs_.end()) {
     uint64_t id = nextFID_++;
     fileIDs_.emplace(name, id);
-    fileInfos_.emplace(id, FileInfo(name, fs::exists(path)));
+    fs::file_status status = fs::symlink_status(path);
+    bool exists = fs::exists(status);
+    fileInfos_.emplace(id, FileInfo(name, exists));
     return id;
   } else {
     return it->second;
