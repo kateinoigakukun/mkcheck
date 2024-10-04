@@ -42,6 +42,18 @@ class DependencyGraph(object):
         traverse(src)
         return deps
 
+    def find_rev_deps(self, src):
+        deps = set()
+        def traverse(name):
+            if name in deps:
+                return
+            deps.add(name)
+            if name in self.rev_nodes:
+                for edge in self.rev_nodes[name].edges:
+                    traverse(edge)
+        traverse(src)
+        return deps
+
     def is_direct(self, src, dst):
         return dst in self.nodes[src].edges
 

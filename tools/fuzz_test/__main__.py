@@ -442,11 +442,15 @@ def reset_project(outputs):
 def fuzz_test(project, files):
     """Find the set of inputs and outputs, as well as the graph."""
 
+    print(f"Cleaning project")
     project.clean()
+    print(f"Building project")
     project.build()
 
+    print("Parsing graph")
     inputs, outputs, built_by, graph = parse_graph(project.graph)
 
+    print("Finding fuzzed files")
     if len(files) == 0:
         fuzzed = sorted([f for f in inputs - outputs if project.filter_in(f)])
     else:
@@ -506,6 +510,26 @@ def query(project, files):
                 dep = dep[len(project.projectPath) + 1:]
             print('  ', dep)
 
+
+def reverse_query(project, files):
+    """Queries the dependencies of a set of files."""
+
+    _, _, built_by, graph = parse_graph(project.graph)
+
+    for f in files:
+        path = os.path.abspath(f)
+        print(f, ':')
+        for dep in sorted(graph.find_rev_deps(path)):
+            skip = False
+            for dir in ['/proc/', '/tmp/', '/dev/']:
+                if dep.startswith(dir):
+                    skip = True
+                    break
+            if dep == path or skip or not project.is_output(dep):
+                continue
+            if dep.startswith(project.projectPath):
+                dep = dep[len(project.projectPath) + 1:]
+            print('  ', dep)
 
 def list_files(project, files):
     """Lists the files in the project to be fuzzed."""
@@ -714,6 +738,7 @@ def main():
     args = parser.parse_args()
 
     buildDir = os.getcwd()
+    print("Inspecting project")
     project = get_project(buildDir, args)
 
     # build_tool()
@@ -726,6 +751,9 @@ def main():
         return
     if args.cmd == 'query':
         query(project, args.files)
+        return
+    if args.cmd == 'rev-query':
+        reverse_query(project, args.files)
         return
     if args.cmd == 'list':
         list_files(project, args.files)
