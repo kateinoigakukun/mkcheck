@@ -43,15 +43,15 @@ class DependencyGraph(object):
         return deps
 
     def find_rev_deps(self, src):
-        deps = set()
-        def traverse(name):
-            if name in deps:
+        deps = dict()
+        def traverse(name, parent, depth):
+            if name in parent or depth > 3:
                 return
-            deps.add(name)
+            parent[name] = dict()
             if name in self.rev_nodes:
                 for edge in self.rev_nodes[name].edges:
-                    traverse(edge)
-        traverse(src)
+                    traverse(edge, parent[name], depth + 1)
+        traverse(src, deps, 0)
         return deps
 
     def is_direct(self, src, dst):
@@ -105,7 +105,10 @@ def parse_graph(path):
             outputs = outputs | proc_out
             image = os.path.basename(files[proc['image']]['name'])
             for output in proc_out:
-                built_by[files[output]['name']] = image
+                output_name = files[output]['name']
+                builders = built_by.get(output_name, set())
+                builders.add((image, proc['uid']))
+                built_by[output_name] = builders
     
     def persisted(uid):
         if files[uid].get('deleted', False):
@@ -136,6 +139,7 @@ def parse_graph(path):
       ins.update(proc.get('input', []))
       outs.update(proc.get('output', []))
    
+    # edges[k] depends on k
     edges = defaultdict(list)
     for uid, file in files.items():
         for dep in file.get('deps', []):
@@ -156,16 +160,26 @@ def parse_graph(path):
 
     nodes = inputs | outputs
 
+    back_edges = defaultdict(list)
+    for src, dsts in edges.items():
+        for dst in dsts:
+            back_edges[dst].append(src)
+
     graph = DependencyGraph()
     for src in nodes:
         visited = set()
         def add_edges(to):
+            _ = back_edges
             if to in visited:
                 return
             visited.add(to)
             for node in edges.get(to, []):
                 if node in nodes:
                     if src != node:
+                        if node == "/home/katei/ghq/github.com/ruby/build/x86_64-linux/yjit/target/release/libyjit.a" and \
+                            src.endswith(".o"):
+                            breakpoint()
+
                         graph.add_dependency(src, node)
                 else:
                     add_edges(node)

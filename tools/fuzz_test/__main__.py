@@ -518,18 +518,24 @@ def reverse_query(project, files):
 
     for f in files:
         path = os.path.abspath(f)
+        deps_tree = graph.find_rev_deps(path)
         print(f, ':')
-        for dep in sorted(graph.find_rev_deps(path)):
-            skip = False
-            for dir in ['/proc/', '/tmp/', '/dev/']:
-                if dep.startswith(dir):
-                    skip = True
-                    break
-            if dep == path or skip or not project.is_output(dep):
-                continue
-            if dep.startswith(project.projectPath):
-                dep = dep[len(project.projectPath) + 1:]
-            print('  ', dep)
+        def traverse(node, level):
+            for dep in sorted(node.keys()):
+                dep_key = dep
+                skip = False
+                for dir in ['/proc/', '/tmp/', '/dev/']:
+                    if dep.startswith(dir):
+                        skip = True
+                        break
+                if dep == path or skip or not project.is_output(dep):
+                    continue
+                if dep.startswith(project.projectPath):
+                    dep = dep[len(project.projectPath) + 1:]
+                print('  ' * level, '-', dep)
+                traverse(node[dep_key], level + 1)
+
+        traverse(deps_tree[path], 1)
 
 def list_files(project, files):
     """Lists the files in the project to be fuzzed."""
@@ -544,6 +550,12 @@ def list_files(project, files):
     for idx, input in zip(range(count), fuzzed):
         print(input)
 
+def inspect_graph(project, files):
+    inputs, outputs, built_by, graph = parse_graph(project.graph)
+
+    # Launch rich repl
+    import IPython
+    IPython.embed()
 
 def parse_test(project, path):
   """Compares the dynamic graph to the parsed one."""
@@ -754,6 +766,9 @@ def main():
         return
     if args.cmd == 'rev-query':
         reverse_query(project, args.files)
+        return
+    if args.cmd == 'inspect':
+        inspect_graph(project, args.files)
         return
     if args.cmd == 'list':
         list_files(project, args.files)
