@@ -26,7 +26,7 @@
 static void sys_read(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], "read");
   }
 }
 
@@ -64,7 +64,7 @@ static void sys_stat(Process *proc, const Args &args)
 {
   const fs::path path = proc->Normalise(ReadString(args.PID, args[0]));
   if (args.Return >= 0) {
-    proc->AddTouched(path);
+    proc->AddTouched(path, __FUNCTION__);
   }
 }
 
@@ -72,7 +72,7 @@ static void sys_stat(Process *proc, const Args &args)
 static void sys_fstat(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddTouched(args[0]);
+    proc->AddTouched(args[0], __FUNCTION__);
   }
 }
 
@@ -82,7 +82,7 @@ static void sys_lstat(Process *proc, const Args &args)
   const fs::path path = proc->Normalise(ReadString(args.PID, args[0]));
 
   if (args.Return >= 0) {
-    proc->AddTouched(path);
+    proc->AddTouched(path, __FUNCTION__);
   }
 }
 
@@ -98,7 +98,7 @@ static void sys_mmap(Process *proc, const Args &args)
     if ((flags & MAP_SHARED) && (prot & PROT_WRITE)) {
       proc->AddOutput(fd);
     } else {
-      proc->AddInput(fd);
+      proc->AddInput(fd, "mmap");
     }
   }
 }
@@ -107,7 +107,7 @@ static void sys_mmap(Process *proc, const Args &args)
 static void sys_pread64(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
   }
 }
 
@@ -115,7 +115,7 @@ static void sys_pread64(Process *proc, const Args &args)
 static void sys_readv(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
   }
 }
 
@@ -123,7 +123,7 @@ static void sys_readv(Process *proc, const Args &args)
 static void sys_writev(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
   }
 }
 
@@ -133,7 +133,7 @@ static void sys_access(Process *proc, const Args &args)
   const fs::path path = proc->Normalise(ReadString(args.PID, args[0]));
 
   if (args.Return >= 0) {
-    proc->AddTouched(path);
+    proc->AddTouched(path, __FUNCTION__);
   }
 }
 
@@ -234,7 +234,7 @@ static void sys_ftruncate(Process *proc, const Args &args)
 static void sys_getdents(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
   }
 }
 
@@ -447,7 +447,7 @@ static void sys_epoll_create(Process *proc, const Args &args)
 static void sys_getdents64(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
   }
 }
 
@@ -482,7 +482,7 @@ static void sys_newfstatat(Process *proc, const Args &args)
   const fs::path path = proc->Normalise(dirfd, ReadString(args.PID, args[1]));
 
   if (args.Return >= 0) {
-    proc->AddTouched(path);
+    proc->AddTouched(path, __FUNCTION__);
   }
 }
 
@@ -592,7 +592,7 @@ static void sys_pipe2(Process *proc, const Args &args)
 static void sys_copy_file_range(Process *proc, const Args &args)
 {
   if (args.Return >= 0) {
-    proc->AddInput(args[0]);
+    proc->AddInput(args[0], __FUNCTION__);
     proc->AddOutput(args[2]);
   }
 }

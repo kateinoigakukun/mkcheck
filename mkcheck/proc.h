@@ -57,16 +57,16 @@ public:
   fs::path Normalise(int fd, const fs::path &path, const fs::path &cwd);
 
   /// Adds a touched (stat'd) file to a process.
-  void AddTouched(const fs::path &path) { AddInput(path); }
+  void AddTouched(const fs::path &path, const std::string &reason) { AddInput(path, reason); }
   /// Adds an input file to a process.
-  void AddInput(const fs::path &path);
+  void AddInput(const fs::path &path, const std::string &reason = "");
   /// Adds an output file to a process.
-  void AddOutput(const fs::path &path);
+  void AddOutput(const fs::path &path, const std::string &reason = "");
 
   /// Adds a touched file to a process.
-  void AddTouched(int fd) { AddInput(fd); }
+  void AddTouched(int fd, const std::string &reason) { AddInput(fd, reason); }
   /// Adds an input fd to a process.
-  void AddInput(int fd) { AddInput(GetFd(fd)); }
+  void AddInput(int fd, const std::string &reason) { AddInput(GetFd(fd), reason); }
   /// Adds an output fd to a process.
   void AddOutput(int fd) { AddOutput(GetFd(fd)); }
 
@@ -115,12 +115,17 @@ private:
   /// If image is copy-on-write.
   bool isCOW_;
 
+  struct IOInfo {
+    std::string reason;
+    uint64_t uid;
+  };
+
   /// Open files.
   std::unordered_map<int, FDInfo> files_;
   /// Input files.
-  std::set<uint64_t> inputs_;
+  std::unordered_map<uint64_t, IOInfo> inputs_;
   /// Output files.
-  std::set<uint64_t> outputs_;
+  std::unordered_map<uint64_t, IOInfo> outputs_;
 
   /// Number of pipes, used to generate unique names.
   size_t pipeCount_;

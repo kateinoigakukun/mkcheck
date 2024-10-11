@@ -28,7 +28,7 @@ Process::Process(
   , isCOW_(isCOW)
   , pipeCount_(0)
 {
-  inputs_.insert(image);
+  inputs_.emplace(image, IOInfo{"image", image});
   for (const auto &fd : fdSet) {
     files_.emplace(fd.Fd, fd);
   }
@@ -54,22 +54,42 @@ void Process::Dump(std::ostream &os)
   // Dump output files.
   os << "  \"output\": [";
   for (auto it = outputs_.begin(); it != outputs_.end();) {
-    os << *it;
+    os << it->first;
     if (++it != outputs_.end()) {
       os << ",";
     }
   }
   os << "]," << std::endl;
 
+  // Dump output reasons.
+  os << "  \"output_reason\": {";
+  for (auto it = outputs_.begin(); it != outputs_.end();) {
+    os << "\"" << it->first << "\": \"" << it->second.reason << "\"";
+    if (++it != outputs_.end()) {
+      os << ",";
+    }
+  }
+  os << "}," << std::endl;
+
   // Dump input files.
   os << "  \"input\": [";
   for (auto it = inputs_.begin(); it != inputs_.end();) {
-    os << *it;
+    os << it->first;
     if (++it != inputs_.end()) {
       os << ",";
     }
   }
-  os << "]" << std::endl;
+  os << "]," << std::endl;
+
+  // Dump input reasons.
+  os << "  \"input_reason\": {";
+  for (auto it = inputs_.begin(); it != inputs_.end();) {
+    os << "\"" << it->first << "\": \"" << it->second.reason << "\"";
+    if (++it != inputs_.end()) {
+      os << ",";
+    }
+  }
+  os << "}" << std::endl;
 
   os << "}";
 }
@@ -128,15 +148,15 @@ fs::path Process::Normalise(int fd, const fs::path &path, const fs::path &cwd)
 }
 
 // -----------------------------------------------------------------------------
-void Process::AddInput(const fs::path &path)
-{
-  inputs_.insert(trace_->Find(path));
+void Process::AddInput(const fs::path &path, const std::string &reason) {
+  uint64_t uid = trace_->Find(path);
+  inputs_.emplace(uid, IOInfo{reason, uid});
 }
 
 // -----------------------------------------------------------------------------
-void Process::AddOutput(const fs::path &path)
-{
-  outputs_.insert(trace_->Find(path));
+void Process::AddOutput(const fs::path &path, const std::string &reason) {
+  uint64_t uid = trace_->Find(path);
+  outputs_.emplace(uid, IOInfo{reason, uid});
   AddDestination(path);
   trace_->Create(path);
 }
@@ -146,7 +166,7 @@ void Process::AddDestination(const fs::path &path)
 {
   uint64_t parent = trace_->Find(path.parent_path());
   if (outputs_.find(parent) == outputs_.end()) {
-    inputs_.insert(parent);
+    inputs_.emplace(parent, IOInfo{"destination", parent});
   }
 }
 
