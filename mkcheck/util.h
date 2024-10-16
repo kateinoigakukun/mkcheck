@@ -23,3 +23,8 @@ std::string ReadString(pid_t pid, uint64_t addr);
  * Reads a string, up to a given length.
  */
 std::string ReadString(pid_t pid, uint64_t addr, size_t len);
+
+/**
+ * Reads a environment variable with key from envp.
+ */
+std::string ReadEnv(pid_t pid, uint64_t envp, std::string key);

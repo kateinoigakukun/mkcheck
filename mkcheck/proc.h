@@ -66,7 +66,12 @@ public:
   /// Adds a touched file to a process.
   void AddTouched(int fd, const std::string &reason) { AddInput(fd, reason); }
   /// Adds an input fd to a process.
-  void AddInput(int fd, const std::string &reason) { AddInput(GetFd(fd), reason); }
+  void AddInput(int fd, const std::string &reason) {
+    if (IsIgnored(fd)) {
+      return;
+    }
+    AddInput(GetFd(fd), reason);
+  }
   /// Adds an output fd to a process.
   void AddOutput(int fd) { AddOutput(GetFd(fd)); }
 
@@ -85,6 +90,16 @@ public:
   void MapFd(int fd, const fs::path &path);
   /// Returns the path to a file opened by a descriptor.
   fs::path GetFd(int fd);
+  void IgnoreFd(int fd) {
+    auto file = files_.find(fd);
+    std::cout << "Ignoring FD: " << fd << std::endl;
+    if (file == files_.end()) {
+      std::cout << "Unknown FD: " << fd << std::endl;
+      return;
+    }
+    file->second.ShouldIgnore = true;
+  }
+  bool IsIgnored(int fd) const;
   /// Duplicates a file descriptor.
   void DupFd(int from, int to);
   /// Sets up a pipe.

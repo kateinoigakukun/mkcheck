@@ -127,12 +127,24 @@ void Trace::SpawnTrace(pid_t parent, pid_t pid)
 }
 
 // -----------------------------------------------------------------------------
-void Trace::StartTrace(pid_t pid, const fs::path &image)
-{
+void Trace::StartTrace(pid_t pid, const fs::path &image,
+                       const std::set<int> ignoreFDs) {
   // Find the previous copy - it must exist.
   auto it = procs_.find(pid);
   assert(it != procs_.end());
   auto proc = it->second;
+
+  uint64_t parentId = proc->GetParent();
+  auto parent = procs_.find(parentId);
+
+  if (parent != procs_.end()) {
+    for (auto fd : ignoreFDs) {
+      parent->second->IgnoreFd(fd);
+    }
+  }
+  for (auto fd : ignoreFDs) {
+    proc->IgnoreFd(fd);
+  }
 
   // Replace with a non-COW trace which has a new image.
   it->second = std::make_shared<Process>(
@@ -219,4 +231,12 @@ void Trace::AddDependency(const fs::path &src, const fs::path &dst)
   const auto dID = Find(dst);
   auto &info = fileInfos_.find(dID)->second;
   info.Deps.insert(sID);
+}
+
+// -----------------------------------------------------------------------------
+void Trace::Ignore(const fs::path &path)
+{
+  const auto id = Find(path);
+  auto &info = fileInfos_.find(id)->second;
+  info.ShouldIgnore = true;
 }

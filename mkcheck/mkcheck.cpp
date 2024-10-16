@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -98,6 +99,16 @@ public:
     return exec_;
   }
 
+  void SetIgnoreFds(const std::set<int> &fds)
+  {
+    ignoreFDs_ = fds;
+  }
+
+  std::set<int> GetIgnoreFds() const
+  {
+    return ignoreFDs_;
+  }
+
 private:
   /// PID of the traced process.
   pid_t pid_;
@@ -105,6 +116,8 @@ private:
   bool entering_;
   /// Name of the executable.
   std::string exec_;
+  /// Set of file descriptors to ignore.
+  std::set<int> ignoreFDs_;
   /// List of arguments.
   uint64_t args_[kSyscallArgs];
   /// Return value.
@@ -157,6 +170,30 @@ std::string FindExecutable(const std::string &exec)
   } while (colon);
   
   throw std::runtime_error("Cannot find executable: " + exec);
+}
+
+std::string ParseGmakeJobserverOptions(std::string mkflags)
+{
+  // Parse --jobserver-auth=X
+  // If multiple are present, the last one wins.
+  const char *options[] = {
+    "--jobserver-auth=",
+    "--jobserver-fds=",
+  };
+
+  for (const char *option : options) {
+    size_t pos = mkflags.rfind(option);
+    if (pos != std::string::npos) {
+      size_t end = mkflags.find(' ', pos);
+      if (end == std::string::npos) {
+        end = mkflags.size();
+      }
+      std::string word = mkflags.substr(pos, end - pos);
+      // Return everything after the '='.
+      return word.substr(word.find('=') + 1);
+    }
+  }
+  return "";
 }
 
 // -----------------------------------------------------------------------------
@@ -338,9 +375,43 @@ int RunTracer(const fs::path &output, pid_t root)
         // process image is replaced, thus the argument is read on entry.
         if (state->IsExiting()) {
           if (state->GetReturn() >= 0) {
-            trace->StartTrace(pid, state->GetExecutable());
+            trace->StartTrace(pid, state->GetExecutable(), state->GetIgnoreFds());
           }
         } else {
+          // Read envp and check MAKEFLAGS to parse --jobserver-auth to exclude
+          // those file descriptors from the trace.
+          const char *MAKEFLAGS_ENVS[] = {
+            "MAKEFLAGS",
+            "CARGO_MAKEFLAGS",
+          };
+
+          for (const char *env : MAKEFLAGS_ENVS) {
+            std::string makeflags = ReadEnv(pid, state->GetArg(2), env);
+            std::string jobserver = ParseGmakeJobserverOptions(makeflags);
+            if (!jobserver.empty()) {
+              // If "fifo:<FILE>", exclude the file path.
+              size_t fifoPos = jobserver.find("fifo:");
+              if (fifoPos == 0) {
+                std::string path = jobserver.substr(fifoPos + 5);
+                trace->Ignore(path);
+              } else {
+                // Otherwise, parse as "R,W" and exclude the file descriptors.
+                std::set<int> fds;
+                size_t pos = 0;
+                while (pos < jobserver.size()) {
+                  size_t end = jobserver.find(',', pos);
+                  if (end == std::string::npos) {
+                    end = jobserver.size();
+                  }
+                  int fd = std::stoi(jobserver.substr(pos, end - pos));
+                  fds.insert(fd);
+                  pos = end + 1;
+                }
+                state->SetIgnoreFds(fds);
+              }
+            }
+          }
+
           state->SetExecutable(ReadString(pid, state->GetArg(0)));
         }
         break;

@@ -39,7 +39,8 @@ public:
   /// Spawns a new process.
   void SpawnTrace(pid_t parent, pid_t pid);
   /// Starts a new trace.
-  void StartTrace(pid_t pid, const fs::path &image);
+  void StartTrace(pid_t pid, const fs::path &image,
+                  const std::set<int> ignoreFDs);
   /// Closes trace.
   void EndTrace(pid_t pid);
   /// Returns the process for a PID.
@@ -54,6 +55,8 @@ public:
   std::string GetFileName(uint64_t fid) const;
   /// Adds a symlink/rename dependency between two files.
   void AddDependency(const fs::path &src, const fs::path &dst);
+  /// Ignores a file.
+  void Ignore(const fs::path &path);
 
 private:
   /// Next available UID.
@@ -73,6 +76,8 @@ private:
     bool Deleted;
     /// Flag indicating if the file exists or not.
     bool Exists;
+    /// Flag indicating if the file should be ignored.
+    bool ShouldIgnore;
     /// List of other files this depends on.
     std::set<uint64_t> Deps;
 
@@ -81,6 +86,7 @@ private:
       : Name(Name)
       , Deleted(false)
       , Exists(exists)
+      , ShouldIgnore(false)
     {
     }
   };

@@ -18,6 +18,7 @@ FDInfo::FDInfo(int fd, const fs::path &path, bool closeExec)
   , Path(path)
   , CloseExec(closeExec)
   , Closed(false)
+  , ShouldIgnore(false)
 {
 }
 

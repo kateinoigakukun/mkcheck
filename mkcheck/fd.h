@@ -23,6 +23,8 @@ struct FDInfo final {
   bool CloseExec;
   /// Flag indicating if the FD was closed or not.
   bool Closed;
+  /// Flag indicating if the FD should not be traced.
+  bool ShouldIgnore;
 
   /// Constructs an empty file descriptor.
   FDInfo();

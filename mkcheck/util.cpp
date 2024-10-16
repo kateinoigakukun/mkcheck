@@ -4,6 +4,8 @@
 
 #include "util.h"
 
+#include <cstdint>
+#include <iostream>
 #include <limits>
 #include <stdexcept>
 
@@ -69,4 +71,30 @@ std::string ReadString(pid_t pid, uint64_t addr, size_t len)
   }
 
   return result;
+}
+
+// -----------------------------------------------------------------------------
+std::string ReadEnv(pid_t pid, uint64_t envp, std::string key)
+{
+  // envp is an array of pointers to strings, conventionally of the
+  // form key=value, which are passed as the environment of the new
+  // program.  The envp array must be terminated by a null pointer.
+
+  while (true) {
+    uint64_t entryPtr;
+    ssize_t read = ReadBuffer(pid, &entryPtr, envp, sizeof(uint64_t));
+    if (entryPtr == 0) {
+      return "";
+    }
+
+    std::string entry = ReadString(pid, entryPtr);
+    size_t eq = entry.find("=");
+    if (eq == std::string::npos) {
+      continue;
+    }
+    if (entry.substr(0, eq) == key) {
+      return entry.substr(eq + 1);
+    }
+    envp += sizeof(uint64_t);
+  }
 }

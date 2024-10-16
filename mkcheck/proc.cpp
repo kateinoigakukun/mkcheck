@@ -4,6 +4,7 @@
 
 #include <fcntl.h>
 
+#include "fd.h"
 #include "proc.h"
 #include "trace.h"
 
@@ -215,6 +216,17 @@ fs::path Process::GetFd(int fd)
     );
   }
   return it->second.Path;
+}
+
+bool Process::IsIgnored(int fd) const
+{
+  auto it = files_.find(fd);
+  if (it == files_.end()) {
+    throw std::runtime_error(
+        "Unknown file descriptor: " + std::to_string(fd)
+    );
+  }
+  return it->second.ShouldIgnore;
 }
 
 // -----------------------------------------------------------------------------
