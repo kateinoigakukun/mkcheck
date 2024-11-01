@@ -176,10 +176,6 @@ def parse_graph(path):
             for node in edges.get(to, []):
                 if node in nodes:
                     if src != node:
-                        if node == "/home/katei/ghq/github.com/ruby/build/x86_64-linux/yjit/target/release/libyjit.a" and \
-                            src.endswith(".o"):
-                            breakpoint()
-
                         graph.add_dependency(src, node)
                 else:
                     add_edges(node)
