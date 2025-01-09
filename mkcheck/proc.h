@@ -92,9 +92,7 @@ public:
   fs::path GetFd(int fd);
   void IgnoreFd(int fd) {
     auto file = files_.find(fd);
-    std::cout << "Ignoring FD: " << fd << std::endl;
     if (file == files_.end()) {
-      std::cout << "Unknown FD: " << fd << std::endl;
       return;
     }
     file->second.ShouldIgnore = true;
