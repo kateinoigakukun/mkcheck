@@ -420,6 +420,16 @@ static void sys_lgetxattr(Process *proc, const Args &args)
 }
 
 // -----------------------------------------------------------------------------
+static void sys_fgetxattr(Process *proc, const Args &args)
+{
+  const int fd = args[0];
+  const fs::path path = proc->Normalise(fd, ReadString(args.PID, args[1]));
+  if (args.Return >= 0) {
+      proc->AddInput(path);
+  }
+}
+
+// -----------------------------------------------------------------------------
 static void sys_llistxattr(Process *proc, const Args &args)
 {
   const fs::path path = proc->Normalise(ReadString(args.PID, args[0]));
@@ -534,7 +544,13 @@ static void sys_faccessat(Process *proc, const Args &args)
 // -----------------------------------------------------------------------------
 static void sys_splice(Process *proc, const Args &args)
 {
-  throw std::runtime_error("not implemented");
+  const int fd_in = args[0];
+  const int fd_out = args[1];
+
+  if (args.Return >= 0) {
+    proc->AddInput(fd_in, __FUNCTION__);
+    proc->AddOutput(fd_out);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -717,6 +733,7 @@ static const HandlerFn kHandlers[] =
   /* 0x0BE */ [SYS_fsetxattr         ] = sys_fsetxattr,
   /* 0x0BF */ [SYS_getxattr          ] = sys_getxattr,
   /* 0x0C0 */ [SYS_lgetxattr         ] = sys_lgetxattr,
+  /* 0x0C1 */ [SYS_fgetxattr         ] = sys_fgetxattr,
   /* 0x0C3 */ [SYS_llistxattr        ] = sys_llistxattr,
   /* 0x0C4 */ [SYS_flistxattr        ] = sys_flistxattr,
   /* 0x0C9 */ [SYS_time              ] = sys_ignore,
@@ -735,6 +752,7 @@ static const HandlerFn kHandlers[] =
   /* 0x0DD */ [SYS_fadvise64         ] = sys_ignore,
   /* 0x0E4 */ [SYS_clock_gettime     ] = sys_ignore,
   /* 0x0E5 */ [SYS_clock_getres      ] = sys_ignore,
+  /* 0x0E6 */ [SYS_clock_nanosleep   ] = sys_ignore,
   /* 0x0E7 */ [SYS_exit_group        ] = sys_ignore,
   /* 0x0E8 */ [SYS_epoll_wait        ] = sys_ignore,
   /* 0x0E9 */ [SYS_epoll_ctl         ] = sys_ignore,
